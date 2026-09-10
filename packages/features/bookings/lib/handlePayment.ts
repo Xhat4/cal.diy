@@ -49,6 +49,7 @@ const handlePayment = async ({
   isDryRun?: boolean;
   bookingFields?: Fields;
   locale?: string;
+  couponCode?: string | null;
 }) => {
   if (isDryRun) return null;
   const key = paymentAppCredentials?.app?.dirName;
