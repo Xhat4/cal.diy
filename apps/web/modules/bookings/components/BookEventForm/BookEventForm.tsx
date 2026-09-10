@@ -21,6 +21,7 @@ import type { FieldError } from "react-hook-form";
 import type { IUseBookingErrors, IUseBookingLoadingStates } from "../../hooks/useBookings";
 import { BookingFields } from "./BookingFields";
 import { FormSkeleton } from "./Skeleton";
+import { TextField } from "@calcom/ui/components/form";
 
 type BookEventFormProps = {
   onCancel?: () => void;
@@ -129,7 +130,14 @@ export const BookEventForm = ({
           locations={eventType.locations}
           rescheduleUid={rescheduleUid || undefined}
           bookingData={bookingData}
-          isPaidEvent={isPaidEvent}
+          isPaidEvent={isPaidEvent && (
+              <TextField
+                className="mb-4"
+                label={t("coupon_code") /* añade esta clave i18n o usa un literal */}
+                placeholder={t("coupon_code_placeholder")}
+                {...bookingForm.register("couponCode")}
+              />
+            )}
           paymentCurrency={paymentCurrency}
         />
         {errors.hasFormErrors || errors.hasDataErrors ? (
