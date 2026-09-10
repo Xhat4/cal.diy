@@ -406,8 +406,11 @@ class StripePaymentService implements IAbstractPaymentService {
     return promotionCode;
   }
   
-  private applyDiscount(amount: number, coupon: Stripe.Coupon): number {
+  private applyDiscount(amount: number, currency: string, coupon: Stripe.Coupon): number {
     if (coupon.amount_off) {
+      if (coupon.currency && coupon.currency.toLowerCase() !== currency.toLowerCase()) {
+        throw new ErrorWithCode(ErrorCode.InvalidCoupon, "Coupon currency does not match payment currency");
+      }
       return Math.max(0, amount - coupon.amount_off);
     }
     if (coupon.percent_off) {
