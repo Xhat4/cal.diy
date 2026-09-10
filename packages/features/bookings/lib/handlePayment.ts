@@ -24,6 +24,7 @@ const handlePayment = async ({
   isDryRun = false,
   bookingFields,
   locale = "en",
+  couponCode,
 }: {
   evt: CalendarEvent;
   selectedEventType: Pick<EventType, "metadata" | "title">;
@@ -186,7 +187,8 @@ const handlePayment = async ({
       bookerEmail,
       bookerPhoneNumber,
       selectedEventType.title,
-      evt.title
+      evt.title,
+      couponCode
     );
   }
 
