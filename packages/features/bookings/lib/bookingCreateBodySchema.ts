@@ -30,6 +30,7 @@ export const bookingCreateBodySchema = z.object({
   rrHostSubsetIds: z.array(z.number()).nullish(),
   crmAppSlug: z.string().nullish().optional(),
   cfToken: z.string().nullish().optional(),
+  couponCode: z.string().optional(),
 
   /**
    * Used to identify if the booking is a dry run.
