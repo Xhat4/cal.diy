@@ -13,7 +13,7 @@ import type { TimeFormat } from "@calcom/lib/timeFormat";
 import { Alert } from "@calcom/ui/components/alert";
 import { Button } from "@calcom/ui/components/button";
 import { EmptyScreen } from "@calcom/ui/components/empty-screen";
-import { Form } from "@calcom/ui/components/form";
+import { Form, TextField } from "@calcom/ui/components/form";
 import type { TFunction } from "i18next";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -21,7 +21,6 @@ import type { FieldError } from "react-hook-form";
 import type { IUseBookingErrors, IUseBookingLoadingStates } from "../../hooks/useBookings";
 import { BookingFields } from "./BookingFields";
 import { FormSkeleton } from "./Skeleton";
-import { TextField } from "@calcom/ui/components/form";
 
 type BookEventFormProps = {
   onCancel?: () => void;
