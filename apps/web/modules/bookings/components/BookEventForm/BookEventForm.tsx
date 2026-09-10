@@ -130,16 +130,17 @@ export const BookEventForm = ({
           locations={eventType.locations}
           rescheduleUid={rescheduleUid || undefined}
           bookingData={bookingData}
-          isPaidEvent={isPaidEvent && (
-              <TextField
-                className="mb-4"
-                label={t("coupon_code") /* añade esta clave i18n o usa un literal */}
-                placeholder={t("coupon_code_placeholder")}
-                {...bookingForm.register("couponCode")}
-              />
-            )}
+          isPaidEvent={isPaidEvent}
           paymentCurrency={paymentCurrency}
         />
+        {isPaidEvent && (
+          <TextField
+            className="mb-4"
+            label={t("coupon_code")}
+            placeholder={t("coupon_code_placeholder")}
+            {...bookingForm.register("couponCode")}
+          />
+        )}
         {errors.hasFormErrors || errors.hasDataErrors ? (
           <div data-testid="booking-fail">
             <Alert
