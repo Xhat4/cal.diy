@@ -2307,6 +2307,7 @@ async function handler(
       isDryRun,
       bookingFields: eventType.bookingFields,
       locale: language,
+      couponCode: reqBody.couponCode,
     });
     const subscriberOptionsPaymentInitiated: GetSubscriberOptions = {
       userId: organizerUser.id,
