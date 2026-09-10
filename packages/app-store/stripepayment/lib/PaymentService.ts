@@ -95,7 +95,7 @@ class StripePaymentService implements IAbstractPaymentService {
           couponCode,
           this.credentials.stripe_user_id
         );
-        finalAmount = this.applyDiscount(payment.amount, promotionCode.coupon);
+        finalAmount = this.applyDiscount(payment.amount, payment.currency, promotionCode.coupon);
         appliedPromotionCodeId = promotionCode.id;
       }
 
