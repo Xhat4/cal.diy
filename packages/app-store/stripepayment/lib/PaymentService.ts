@@ -68,7 +68,8 @@ class StripePaymentService implements IAbstractPaymentService {
     bookerEmail: string,
     bookerPhoneNumber?: string | null,
     eventTitle?: string,
-    bookingTitle?: string
+    bookingTitle?: string,
+    couponCode?: string | null
   ) {
     try {
       // Ensure that the payment service can support the passed payment option
@@ -86,8 +87,20 @@ class StripePaymentService implements IAbstractPaymentService {
         bookerPhoneNumber
       );
 
+      let finalAmount = payment.amount;
+      let appliedPromotionCodeId: string | null = null;
+  
+      if (couponCode) {
+        const promotionCode = await this.resolvePromotionCode(
+          couponCode,
+          this.credentials.stripe_user_id
+        );
+        finalAmount = this.applyDiscount(payment.amount, promotionCode.coupon);
+        appliedPromotionCodeId = promotionCode.id;
+      }
+
       const params: Stripe.PaymentIntentCreateParams = {
-        amount: payment.amount,
+        amount: finalAmount,
         currency: payment.currency,
         customer: customer.id,
         automatic_payment_methods: {
@@ -104,6 +117,10 @@ class StripePaymentService implements IAbstractPaymentService {
           bookingTitle: bookingTitle || "",
         }),
       };
+      if (appliedPromotionCodeId) {
+        params.metadata!.couponCode = couponCode!;
+        params.metadata!.promotionCodeId = appliedPromotionCodeId;
+      }
 
       const paymentIntent = await this.stripe.paymentIntents.create(params, {
         stripeAccount: this.credentials.stripe_user_id,
@@ -122,7 +139,7 @@ class StripePaymentService implements IAbstractPaymentService {
               id: bookingId,
             },
           },
-          amount: payment.amount,
+          amount: finalAmount,
           currency: payment.currency,
           externalId: paymentIntent.id,
           data: Object.assign({}, paymentIntent, {
@@ -372,6 +389,31 @@ class StripePaymentService implements IAbstractPaymentService {
       const err = getServerErrorFromUnknown(e);
       throw err;
     }
+  }
+
+  private async resolvePromotionCode(
+    code: string,
+    stripeAccount: string
+  ): Promise<Stripe.PromotionCode> {
+    const promotionCodes = await this.stripe.promotionCodes.list(
+      { code, active: true, limit: 1 },
+      { stripeAccount }
+    );
+    const promotionCode = promotionCodes.data[0];
+    if (!promotionCode) {
+      throw new ErrorWithCode(ErrorCode.InvalidCoupon, "Invalid or expired promotion code");
+    }
+    return promotionCode;
+  }
+  
+  private applyDiscount(amount: number, coupon: Stripe.Coupon): number {
+    if (coupon.amount_off) {
+      return Math.max(0, amount - coupon.amount_off);
+    }
+    if (coupon.percent_off) {
+      return Math.round(amount * (1 - coupon.percent_off / 100));
+    }
+    return amount;
   }
 
   async afterPayment(
