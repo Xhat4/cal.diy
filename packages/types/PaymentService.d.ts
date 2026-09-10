@@ -23,7 +23,8 @@ export interface IAbstractPaymentService {
     bookerEmail: string,
     bookerPhoneNumber?: string | null,
     eventTitle?: string,
-    bookingTitle?: string
+    bookingTitle?: string,
+    couponCode?: string | null
   ): Promise<Payment>;
   /* This method is to collect card details to charge at a later date ex. no-show fees */
   collectCard(
