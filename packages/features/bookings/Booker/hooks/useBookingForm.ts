@@ -62,6 +62,7 @@ export const useBookingForm = ({
     // to set generic error messages on. Needed until RHF has implemented root error keys.
     globalError: undefined;
     cfToken?: string;
+    couponCode?: string;
   };
   const isRescheduling = !!rescheduleUid && !!bookingData;
 
