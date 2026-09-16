@@ -277,7 +277,6 @@ const createNewSeat = async (
       bookerPhoneNumber,
       bookingFields: eventType.bookingFields,
       locale: attendeeLanguage ?? "en",
-      couponCode: reqBody.couponCode,
     });
 
     resultBooking = { ...foundBooking };
