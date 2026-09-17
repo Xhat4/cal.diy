@@ -70,10 +70,22 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
   const paymentAppData = getPaymentAppData(props.eventType);
   useEffect(() => {
     let embedIframeWidth = 0;
-    const _timezone = localStorage.getItem("timeOption.preferredTimeZone") || CURRENT_TIMEZONE;
+    const storedTz = localStorage.getItem("timeOption.preferredTimeZone");
+    const _timezone = storedTz && storedTz !== "undefined" && storedTz !== "null"
+      ? storedTz
+      : (CURRENT_TIMEZONE || "UTC");
+    
     setTimezone(_timezone);
-    setDate(date.tz(_timezone));
+
+    const parsedDate = dayjs(props.booking?.startTime);
+    if (parsedDate.isValid()) {
+      setDate(parsedDate.tz(_timezone));
+    } else {
+      console.error("[PaymentPage] Fecha startTime inválida:", props.booking?.startTime);
+    }
+
     setIs24h(!!getIs24hClockFromLocalStorage());
+    
     if (isEmbed) {
       requestAnimationFrame(function fixStripeIframe() {
         // HACK: Look for stripe iframe and center position it just above the embed content
@@ -91,7 +103,7 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEmbed, date.tz]);
+  }, [isEmbed, props.booking?.startTime]);
 
   const eventName = props.booking.title;
 
