@@ -91,4 +91,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=30s --retries=5 \
   CMD wget --spider http://localhost:3000 || exit 1
 
-CMD ["/calcom/scripts/start.sh"]
+CMD ["/bin/sh", "-c", "yarn workspace @calcom/prisma db-deploy && /calcom/scripts/start.sh"]
