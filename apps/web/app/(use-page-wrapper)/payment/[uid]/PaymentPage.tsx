@@ -63,7 +63,8 @@ const BtcpayPaymentComponent = dynamic(
 const PaymentPage: FC<PaymentPageProps> = (props) => {
   const { t, i18n } = useLocale();
   const [is24h, setIs24h] = useState(isBrowserLocale24h());
-  const [date, setDate] = useState(dayjs.utc(props.booking.startTime));
+  const initialStartTime = props.booking?.startTime ? dayjs.utc(props.booking.startTime) : dayjs().utc();
+  const [date, setDate] = useState(initialStartTime);
   const [timezone, setTimezone] = useState<string | null>(null);
   useTheme(props.profile.theme);
   const isEmbed = useIsEmbed();
