@@ -136,7 +136,7 @@ export const BookEventForm = ({
           <TextField
             className="mb-4"
             label={t("coupon_code")}
-            placeholder={t("coupon_code_placeholder")}
+            placeholder={t("Cupon")}
             {...bookingForm.register("couponCode")}
           />
         )}
