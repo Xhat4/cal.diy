@@ -63,7 +63,7 @@ const BtcpayPaymentComponent = dynamic(
 const StripePaymentComponent = dynamic(
   () =>
     import("@calcom/web/components/apps/stripepayment/Setup").then(
-      (m) => m.Setup
+      (m) => m.default
     ),
   {
     ssr: false,
