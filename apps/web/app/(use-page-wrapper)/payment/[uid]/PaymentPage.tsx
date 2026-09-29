@@ -63,7 +63,7 @@ const BtcpayPaymentComponent = dynamic(
 const StripePaymentComponent = dynamic(
   () =>
     import("@calcom/web/components/apps/stripepayment/Setup").then(
-      (m) => m.default
+      (m) => (m.default || m) as React.ComponentType<any>
     ),
   {
     ssr: false,
@@ -180,7 +180,7 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
                     <div className="mt-4 text-center text-default dark:text-gray-300">{t("paid")}</div>
                   )}
                   {props.payment.appId === "stripe" && !props.payment.success && (
-                    <StripePaymentComponent payment={props.payment} paymentPageProps={props} />
+                    <StripePaymentComponent payment={props.payment} paymentPageProps={props} {...props} />
                   )}
                   {props.payment.appId === "paypal" && !props.payment.success && (
                     <PaypalPaymentComponent payment={props.payment} />
