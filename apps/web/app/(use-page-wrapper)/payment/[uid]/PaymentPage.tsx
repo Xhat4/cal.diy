@@ -180,7 +180,7 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
                     <div className="mt-4 text-center text-default dark:text-gray-300">{t("paid")}</div>
                   )}
                   {props.payment.appId === "stripe" && !props.payment.success && (
-                    <StripePaymentComponent payment={props.payment} paymentPageProps={props} {...props} />
+                    <StripePaymentComponent payment={props.payment} paymentPageProps={props} />
                   )}
                   {props.payment.appId === "paypal" && !props.payment.success && (
                     <PaypalPaymentComponent payment={props.payment} />
