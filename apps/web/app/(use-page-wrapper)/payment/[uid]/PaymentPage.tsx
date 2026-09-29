@@ -60,16 +60,6 @@ const BtcpayPaymentComponent = dynamic(
   }
 );
 
-const StripePaymentComponent = dynamic(
-  () =>
-    import("@calcom/web/components/apps/stripepayment/Setup").then(
-      (m) => (m.default || m) as React.ComponentType<any>
-    ),
-  {
-    ssr: false,
-  }
-);
-
 const PaymentPage: FC<PaymentPageProps> = (props) => {
   const { t, i18n } = useLocale();
   const [is24h, setIs24h] = useState(isBrowserLocale24h());
@@ -180,7 +170,14 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
                     <div className="mt-4 text-center text-default dark:text-gray-300">{t("paid")}</div>
                   )}
                   {props.payment.appId === "stripe" && !props.payment.success && (
-                    <StripePaymentComponent payment={props.payment} paymentPageProps={props} />
+                    <div className="flex flex-col items-center justify-center space-y-4 py-4">
+                      <a
+                        href={(props.payment.data as { stripe_checkout_url?: string })?.stripe_checkout_url || "#"}
+                        className="w-full text-center rounded-md bg-black px-4 py-2 font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                      >
+                        Pagar con tarjeta (Stripe)
+                      </a>
+                    </div>
                   )}
                   {props.payment.appId === "paypal" && !props.payment.success && (
                     <PaypalPaymentComponent payment={props.payment} />
