@@ -62,7 +62,7 @@ const BtcpayPaymentComponent = dynamic(
 
 const StripePaymentComponent = dynamic(
   () =>
-    import("@calcom/app-store/stripepayment/components/StripePaymentComponent").then(
+    import("@calcom/app-store/stripe/components/StripePaymentComponent").then(
       (m) => m.StripePaymentComponent
     ),
   {
