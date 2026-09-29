@@ -60,6 +60,16 @@ const BtcpayPaymentComponent = dynamic(
   }
 );
 
+const StripePaymentComponent = dynamic(
+  () =>
+    import("@calcom/app-store/stripepayment/components/StripePaymentComponent").then(
+      (m) => m.StripePaymentComponent
+    ),
+  {
+    ssr: false,
+  }
+);
+
 const PaymentPage: FC<PaymentPageProps> = (props) => {
   const { t, i18n } = useLocale();
   const [is24h, setIs24h] = useState(isBrowserLocale24h());
@@ -170,7 +180,7 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
                     <div className="mt-4 text-center text-default dark:text-gray-300">{t("paid")}</div>
                   )}
                   {props.payment.appId === "stripe" && !props.payment.success && (
-                    <div>{/* StripePaymentComponent removed */}</div>
+                    <StripePaymentComponent payment={props.payment} paymentPageProps={props} />
                   )}
                   {props.payment.appId === "paypal" && !props.payment.success && (
                     <PaypalPaymentComponent payment={props.payment} />
