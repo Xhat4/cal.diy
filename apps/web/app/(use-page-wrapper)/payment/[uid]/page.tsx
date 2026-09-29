@@ -60,13 +60,12 @@ export const generateMetadata = async ({ params, searchParams }: PageProps) => {
 };
 
 const getData = withAppDirSsr<PaymentPageProps>(async (ctx) => {
-  const paymentUid = ctx.params?.paymentId || ctx.params?.uid;
+  const paymentUid = (ctx.params?.paymentId || ctx.params?.uid) as string;
 
-  if (!paymentUid || typeof paymentUid !== "string") {
+  if (!paymentUid) {
     throw new Error("Payment UID not provided");
   }
 
-  // 1. Buscamos el pago y traemos la relación con booking y eventType
   const payment = await prisma.payment.findUnique({
     where: { uid: paymentUid },
     select: {
@@ -110,8 +109,8 @@ const getData = withAppDirSsr<PaymentPageProps>(async (ctx) => {
 
   const booking = payment.booking;
   const eventType = booking.eventType;
+  const paymentData = (payment.data as Record<string, unknown>) || {};
 
-  // 2. Retornamos las props reales hacia el front-end
   return {
     props: {
       payment: {
@@ -121,27 +120,28 @@ const getData = withAppDirSsr<PaymentPageProps>(async (ctx) => {
         amount: payment.amount,
         currency: payment.currency,
         paymentOption: payment.paymentOption,
-        data: (payment.data as Record<string, unknown>) || {},
+        data: paymentData,
         appId: payment.appId,
       },
+      clientSecret: (paymentData.client_secret as string) || null,
       booking: {
         id: booking.id,
         uid: booking.uid,
-        title: booking.title || eventType?.title || "Reserva de cita",
+        title: booking.title || eventType?.title || "Reserva",
         startTime: booking.startTime.toISOString(),
         endTime: booking.endTime.toISOString(),
         status: booking.status,
         paid: booking.paid,
-        location: booking.location,
-        description: booking.description,
+        location: booking.location ?? null,
+        description: booking.description ?? null,
       },
       eventType: {
-        id: eventType?.id || 0,
-        title: eventType?.title || booking.title || "",
-        length: eventType?.length || 30, // Si no hay eventType, usa 30 mins por defecto
-        price: eventType?.price || payment.amount,
-        currency: eventType?.currency || payment.currency,
-        metadata: (eventType?.metadata as Record<string, unknown>) || null,
+        id: eventType?.id ?? 0,
+        title: eventType?.title ?? booking.title ?? "",
+        length: eventType?.length ?? 30,
+        price: eventType?.price ?? payment.amount,
+        currency: eventType?.currency ?? payment.currency,
+        metadata: (eventType?.metadata as Record<string, unknown>) ?? null,
       },
       profile: { theme: null, hideBranding: false },
     },
