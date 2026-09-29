@@ -5,6 +5,7 @@ import { _generateMetadata } from "app/_utils";
 import { withAppDirSsr } from "app/WithAppDirSsr";
 import { cookies, headers } from "next/headers";
 import PaymentPage from "./PaymentPage";
+import prisma from "@calcom/prisma";
 
 type PaymentPageProps = {
   payment: {
@@ -58,32 +59,94 @@ export const generateMetadata = async ({ params, searchParams }: PageProps) => {
   );
 };
 
-const getData = withAppDirSsr<PaymentPageProps>(async () => ({
-  props: {
-    payment: {
-      id: 0,
-      success: false,
-      refunded: false,
-      amount: 0,
-      currency: "usd",
-      paymentOption: null,
-      data: {},
-      appId: null,
+const getData = withAppDirSsr<PaymentPageProps>(async (ctx) => {
+  const paymentUid = ctx.params?.paymentId || ctx.params?.uid;
+
+  if (!paymentUid || typeof paymentUid !== "string") {
+    throw new Error("Payment UID not provided");
+  }
+
+  // 1. Buscamos el pago y traemos la relación con booking y eventType
+  const payment = await prisma.payment.findUnique({
+    where: { uid: paymentUid },
+    select: {
+      id: true,
+      amount: true,
+      currency: true,
+      success: true,
+      refunded: true,
+      paymentOption: true,
+      data: true,
+      appId: true,
+      booking: {
+        select: {
+          id: true,
+          uid: true,
+          title: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          paid: true,
+          location: true,
+          description: true,
+          eventType: {
+            select: {
+              id: true,
+              title: true,
+              length: true,
+              price: true,
+              currency: true,
+              metadata: true,
+            },
+          },
+        },
+      },
     },
-    booking: {
-      id: 0,
-      uid: "",
-      title: "",
-      startTime: "",
-      endTime: "",
-      status: "",
-      paid: false,
-      location: null,
+  });
+
+  if (!payment || !payment.booking) {
+    throw new Error("Payment or Booking not found");
+  }
+
+  const booking = payment.booking;
+  const eventType = booking.eventType;
+
+  // 2. Retornamos las props reales hacia el front-end
+  return {
+    props: {
+      payment: {
+        id: payment.id,
+        success: payment.success,
+        refunded: payment.refunded,
+        amount: payment.amount,
+        currency: payment.currency,
+        paymentOption: payment.paymentOption,
+        data: (payment.data as Record<string, unknown>) || {},
+        appId: payment.appId,
+      },
+      booking: {
+        id: booking.id,
+        uid: booking.uid,
+        title: booking.title || eventType?.title || "Reserva de cita",
+        startTime: booking.startTime.toISOString(),
+        endTime: booking.endTime.toISOString(),
+        status: booking.status,
+        paid: booking.paid,
+        location: booking.location,
+        description: booking.description,
+      },
+      eventType: {
+        id: eventType?.id || 0,
+        title: eventType?.title || booking.title || "",
+        length: eventType?.length || 30, // Si no hay eventType, usa 30 mins por defecto
+        price: eventType?.price || payment.amount,
+        currency: eventType?.currency || payment.currency,
+        metadata: (eventType?.metadata as Record<string, unknown>) || null,
+      },
+      profile: { theme: null, hideBranding: false },
     },
-    eventType: { id: 0, title: "", length: 0, price: 0, currency: "usd", metadata: null },
-    profile: { theme: null, hideBranding: false },
-  },
-}));
+  };
+});
 
 const ServerPage = async ({ params, searchParams }: PageProps) => {
   const props = await getData(
