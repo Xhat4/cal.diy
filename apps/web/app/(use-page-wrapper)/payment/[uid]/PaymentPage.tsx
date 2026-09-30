@@ -71,15 +71,26 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
 
   const handleStripePayment = () => {
     setLoading(true);
+  
+    // 1. Intentar obtener la URL de Checkout almacenada en el JSON de la reserva/pago
     const checkoutUrl =
-      (props.payment.data as { stripe_checkout_url?: string; url?: string })?.stripe_checkout_url ||
-      (props.payment.data as { url?: string })?.url;
-
+      (props.payment.data as { stripe_checkout_url?: string; url?: string; stripe_redirect_url?: string })?.stripe_checkout_url ||
+      (props.payment.data as { stripe_checkout_url?: string; url?: string; stripe_redirect_url?: string })?.url ||
+      (props.payment.data as { stripe_checkout_url?: string; url?: string; stripe_redirect_url?: string })?.stripe_redirect_url;
+  
     if (checkoutUrl) {
       window.location.href = checkoutUrl;
-    } else {
-      window.location.href = `/api/integrations/stripepayment/checkout?paymentId=${props.payment.id}`;
+      return;
     }
+  
+    // 2. Si hay clientSecret de Stripe Elements, redirigir al flujo de Stripe
+    if (props.clientSecret) {
+      window.location.href = `https://checkout.stripe.com/pay/${props.clientSecret}`;
+      return;
+    }
+  
+    // 3. Fallback a la API de pago por defecto del paquete app-store
+    window.location.href = `/api/book/checkout?paymentId=${props.payment.id}`;
   };
 
   useTheme(props.profile.theme);
