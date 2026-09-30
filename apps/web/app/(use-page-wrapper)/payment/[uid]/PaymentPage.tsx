@@ -170,13 +170,14 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
                     <div className="mt-4 text-center text-default dark:text-gray-300">{t("paid")}</div>
                   )}
                   {props.payment.appId === "stripe" && !props.payment.success && (
-                    <div className="flex flex-col items-center justify-center space-y-4 py-4">
-                      <a
-                        href={(props.payment.data as { stripe_checkout_url?: string })?.stripe_checkout_url || "#"}
-                        className="w-full text-center rounded-md bg-black px-4 py-2 font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                    <div className="flex flex-col items-center justify-center space-y-4 py-4 w-full">
+                      <button
+                        onClick={handleStripePayment}
+                        disabled={loading}
+                        className="w-full text-center rounded-md bg-white px-4 py-3 font-medium text-black hover:bg-gray-200 transition-colors disabled:opacity-50"
                       >
-                        Pagar con tarjeta (Stripe)
-                      </a>
+                        {loading ? "Redirigiendo a Stripe..." : "Pagar con tarjeta (Stripe)"}
+                      </button>
                     </div>
                   )}
                   {props.payment.appId === "paypal" && !props.payment.success && (
