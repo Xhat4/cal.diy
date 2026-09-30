@@ -17,6 +17,10 @@ import dynamic from "next/dynamic";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 
+// Componentes oficiales de Stripe ya incluidos en el package.json
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
 type PaymentPageProps = {
   payment: { id: number; success: boolean; refunded: boolean; amount: number; currency: string; paymentOption: string | null; data: Record<string, unknown>; appId?: string | null };
   clientSecret?: string | null;
@@ -26,27 +30,68 @@ type PaymentPageProps = {
   user?: { name?: string | null; username?: string | null } | null;
 };
 
+// Carga la clave pública de Stripe desde las variables de entorno
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || "");
+
+// Subcomponente del formulario de tarjeta
+function StripeCheckoutForm() {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setIsProcessing(true);
+    setErrorMessage(null);
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.href,
+      },
+    });
+
+    if (error) {
+      setErrorMessage(error.message || "Ocurrió un error al procesar el pago");
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full space-y-4 my-4 text-left">
+      <PaymentElement />
+      {errorMessage && (
+        <div className="text-red-500 text-sm font-medium">{errorMessage}</div>
+      )}
+      <button
+        type="submit"
+        disabled={isProcessing || !stripe}
+        className="w-full rounded-md bg-white py-3 font-medium text-black hover:bg-gray-200 transition-colors disabled:opacity-50"
+      >
+        {isProcessing ? "Procesando pago..." : "Pagar ahora"}
+      </button>
+    </form>
+  );
+}
+
 const PaypalPaymentComponent = dynamic(
   () =>
     import("@calcom/web/components/apps/paypal/PaypalPaymentComponent").then((m) => m.PaypalPaymentComponent),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const AlbyPaymentComponent = dynamic(
   () => import("@calcom/web/components/apps/alby/AlbyPaymentComponent").then((m) => m.AlbyPaymentComponent),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const HitpayPaymentComponent = dynamic(
   () =>
     import("@calcom/web/components/apps/hitpay/HitpayPaymentComponent").then((m) => m.HitpayPaymentComponent),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const BtcpayPaymentComponent = dynamic(
@@ -54,9 +99,7 @@ const BtcpayPaymentComponent = dynamic(
     import("@calcom/web/components/apps/btcpayserver/BtcpayPaymentComponent").then(
       (m) => m.BtcpayPaymentComponent
     ),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const PaymentPage: FC<PaymentPageProps> = (props) => {
@@ -65,33 +108,6 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
   const initialStartTime = props.booking?.startTime ? dayjs.utc(props.booking.startTime) : dayjs().utc();
   const [date, setDate] = useState(initialStartTime);
   const [timezone, setTimezone] = useState<string | null>(null);
-
-  // Declaraciones necesarias para el botón de Stripe
-  const [loading, setLoading] = useState(false);
-
-  const handleStripePayment = () => {
-    setLoading(true);
-  
-    // 1. Intentar obtener la URL de Checkout almacenada en el JSON de la reserva/pago
-    const checkoutUrl =
-      (props.payment.data as { stripe_checkout_url?: string; url?: string; stripe_redirect_url?: string })?.stripe_checkout_url ||
-      (props.payment.data as { stripe_checkout_url?: string; url?: string; stripe_redirect_url?: string })?.url ||
-      (props.payment.data as { stripe_checkout_url?: string; url?: string; stripe_redirect_url?: string })?.stripe_redirect_url;
-  
-    if (checkoutUrl) {
-      window.location.href = checkoutUrl;
-      return;
-    }
-  
-    // 2. Si hay clientSecret de Stripe Elements, redirigir al flujo de Stripe
-    if (props.clientSecret) {
-      window.location.href = `https://checkout.stripe.com/pay/${props.clientSecret}`;
-      return;
-    }
-  
-    // 3. Fallback a la API de pago por defecto del paquete app-store
-    window.location.href = `/api/book/checkout?paymentId=${props.payment.id}`;
-  };
 
   useTheme(props.profile.theme);
   const isEmbed = useIsEmbed();
@@ -134,6 +150,11 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
   }, [isEmbed, props.booking?.startTime]);
 
   const eventName = props.booking.title;
+
+  // Extraer el clientSecret necesario para inicializar Stripe Elements
+  const clientSecret =
+    props.clientSecret ||
+    (props.payment.data as { client_secret?: string })?.client_secret;
 
   return (
     <div className="h-screen">
@@ -192,21 +213,27 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
                     </div>
                   </div>
                 </div>
+
                 <div>
                   {props.payment.success && !props.payment.refunded && (
                     <div className="mt-4 text-center text-default dark:text-gray-300">{t("paid")}</div>
                   )}
+
+                  {/* Stripe Elements embebido en la tarjeta de pago */}
                   {props.payment.appId === "stripe" && !props.payment.success && (
-                    <div className="flex flex-col items-center justify-center space-y-4 py-4 w-full">
-                      <button
-                        onClick={handleStripePayment}
-                        disabled={loading}
-                        className="w-full text-center rounded-md bg-white px-4 py-3 font-medium text-black hover:bg-gray-200 transition-colors disabled:opacity-50"
-                      >
-                        {loading ? "Redirigiendo a Stripe..." : "Pagar con tarjeta (Stripe)"}
-                      </button>
+                    <div>
+                      {clientSecret ? (
+                        <Elements stripe={stripePromise} options={{ clientSecret }}>
+                          <StripeCheckoutForm />
+                        </Elements>
+                      ) : (
+                        <div className="p-4 text-center text-red-500 text-sm">
+                          No se pudo cargar la pasarela de pago (client_secret no encontrado).
+                        </div>
+                      )}
                     </div>
                   )}
+
                   {props.payment.appId === "paypal" && !props.payment.success && (
                     <PaypalPaymentComponent payment={props.payment} />
                   )}
@@ -223,6 +250,7 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
                     <div className="mt-4 text-center text-default dark:text-gray-300">{t("refunded")}</div>
                   )}
                 </div>
+
                 {!props.profile.hideBranding && (
                   <div className="mt-4 border-t pt-4 text-center text-muted text-xs dark:border-gray-900 dark:text-inverted">
                     <a href={`${WEBSITE_URL}/signup`}>
