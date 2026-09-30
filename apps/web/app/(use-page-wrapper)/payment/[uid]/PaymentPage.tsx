@@ -17,7 +17,6 @@ import dynamic from "next/dynamic";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 
-
 type PaymentPageProps = {
   payment: { id: number; success: boolean; refunded: boolean; amount: number; currency: string; paymentOption: string | null; data: Record<string, unknown>; appId?: string | null };
   clientSecret?: string | null;
@@ -66,9 +65,27 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
   const initialStartTime = props.booking?.startTime ? dayjs.utc(props.booking.startTime) : dayjs().utc();
   const [date, setDate] = useState(initialStartTime);
   const [timezone, setTimezone] = useState<string | null>(null);
+
+  // Declaraciones necesarias para el botón de Stripe
+  const [loading, setLoading] = useState(false);
+
+  const handleStripePayment = () => {
+    setLoading(true);
+    const checkoutUrl =
+      (props.payment.data as { stripe_checkout_url?: string; url?: string })?.stripe_checkout_url ||
+      (props.payment.data as { url?: string })?.url;
+
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl;
+    } else {
+      window.location.href = `/api/integrations/stripepayment/checkout?paymentId=${props.payment.id}`;
+    }
+  };
+
   useTheme(props.profile.theme);
   const isEmbed = useIsEmbed();
   const paymentAppData = getPaymentAppData(props.eventType);
+
   useEffect(() => {
     let embedIframeWidth = 0;
     const storedTz = localStorage.getItem("timeOption.preferredTimeZone");
@@ -89,7 +106,6 @@ const PaymentPage: FC<PaymentPageProps> = (props) => {
     
     if (isEmbed) {
       requestAnimationFrame(function fixStripeIframe() {
-        // HACK: Look for stripe iframe and center position it just above the embed content
         const stripeIframeWrapper = document.querySelector(
           'iframe[src*="https://js.stripe.com/v3/authorize-with-url-inner"]'
         )?.parentElement;
